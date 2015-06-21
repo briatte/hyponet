@@ -55,4 +55,13 @@ for(i in rev(f)) {
 
 }
 
+# corrections
+e$i = gsub("^https://", "http://", e$i)
+e$j = gsub("^https://", "http://", e$j)
+e$i = gsub("/$", "", e$i)
+e$j = gsub("/$", "", e$j)
+
+e = filter(e, grepl("/\\d+$", i), str_count(i, "/") == 3,
+           grepl("/\\d+$", j), str_count(j, "/") == 3)
+
 write_csv(arrange(e, t), "data/edges_hypotheses.csv")
