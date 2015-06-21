@@ -13,13 +13,13 @@ b = with(a, paste0(blog, slug))
 b = b[ grepl("^http://[a-z0-9]+.hypotheses.org/\\d+$", b) ]
 
 # fraction of full sample to download
-s = .25
+s = 1/4
 
 k = sample(b, s * nrow(a) - length(list.files("html")))
 
 while(length(k) > 0) {
 
-  cat("Downloading", length(k), "articles\n")
+  cat("Downloading", sprintf("%4.0f", length(k)), "articles\n")
 
   for(j in sample(k, ifelse(length(k) > 100, 100, length(k)))) {
 
