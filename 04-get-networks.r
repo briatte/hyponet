@@ -4,6 +4,7 @@
 
 library(dplyr)
 library(readr)
+library(stringr)
 
 library(animation)
 library(ggplot2)
@@ -11,24 +12,32 @@ library(RColorBrewer)
 
 library(GGally)
 library(igraph)
+library(intergraph)
 library(network)
 
 e = read_csv("data/edges_hypotheses.csv")
 
+# simplified date
+
 e$t = substr(e$t, 1, 4)
-e$i = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$i))
-e$j = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$j))
+
+# simplified edges (blogs)
+
+e$ii = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$i))
+e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$j))
 
 group_by(e, t) %>%
-  summarise(edges = n(), blogs_i = n_distinct(i), blogs_j = n_distinct(j))
+  summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj))
 
 # complete network (too large for optimal community detection, so using Waltrap)
 
-n = network(e[, c("i", "j") ])
+n = network(e[, c("ii", "jj") ])
 
 network::set.edge.attribute(n, "w", 1 / e$w)
-n %v% "oc" = paste0("i", membership(walktrap.community(intergraph::asIgraph(n),
-                                                       weights = n %e% "w")))
+
+# communities
+oc = membership(walktrap.community(asIgraph(n), weights = n %e% "w"))
+n %v% "oc" = str_pad(oc, width = 3, pad = "i")
 
 colors = sort(table(n %v% "oc"), decreasing = TRUE)
 x = ifelse(length(colors) > 7, 8, length(colors))
@@ -37,10 +46,10 @@ colors[ nchar(colors) < 7 ] = "#AAAAAA"
 
 ggnet(n, size = 0, node.group = n %v% "oc") +
   geom_text(aes(label = network.vertex.names(n), color = n %v% "oc",
-                size = cut(igraph::degree(intergraph::asIgraph(n)),
+                size = cut(igraph::degree(asIgraph(n)),
                            c(0, 10, 20, 40, 80)))) +
   geom_text(aes(label = network.vertex.names(n),
-                size = cut(igraph::degree(intergraph::asIgraph(n)),
+                size = cut(igraph::degree(asIgraph(n)),
                            c(0, 10, 20, 40, 80))),
             color = "black", alpha = .5) +
   scale_color_manual("", values = colors) +
@@ -52,14 +61,58 @@ ggsave("hyponet.pdf", width = 7, height = 7)
 
 # year-specific networks (small enough to use optimal community detection)
 
+l = list()
+
+for(i in as.character(2009:2015)) {
+
+  n = network(e[ e$t == i, c("ii", "jj") ], directed = TRUE)
+
+  # tie weights
+  network::set.edge.attribute(n, "w", 1 / e[ e$t == i, "w" ])
+
+  # communities
+  oc = optimal.community(asIgraph(n), weights = n %e% "w")
+
+  n %v% "oc" = paste0("g", membership(oc))
+
+  n %n% "year" = i
+  n %n% "modularity" = modularity(oc)
+  n %n% "oc" = sizes(oc)
+
+  t = e[ e$t == i, c("i", "j") ]
+  t = unique(c(t$i, t$j)) %>%
+    gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", .)
+
+  n %n% "files" = t
+
+  cat(n %n% "Network for year", i, ":",
+      length(t), "files,",
+      network.size(n), "nodes\n")
+  print(n %n% "oc")
+
+  l[[ i ]] = n
+
+}
+
+save(l, file = "data/networks.rda")
+
+# network dimensions
+
+dim = data_frame(
+  network = names(l),
+  nodes = sapply(l, network.size),
+  edges = sapply(l, network.edgecount),
+  density = sapply(l, network.density),
+  communities = sapply(l, function(x) length(x %n% "oc")),
+  modularity = sapply(l, function(x) x %n% "modularity")
+)
+
+knitr::kable(dim, digits = 2)
+
+# plot dynamic network
+
 saveGIF({
-  for(i in as.character(2009:2015)) {
-
-    n = network(e[ e$t == i, c("i", "j") ], directed = TRUE)
-
-    network::set.edge.attribute(n, "w", 1 / e[ e$t == i, "w" ])
-    n %v% "oc" = letters[ membership(optimal.community(intergraph::asIgraph(n),
-                                                       weights = n %e% "w")) ]
+  for(n in l) {
 
     colors = sort(table(n %v% "oc"), decreasing = TRUE)
     x = ifelse(length(colors) > 7, 8, length(colors))
@@ -70,7 +123,8 @@ saveGIF({
       geom_text(aes(label = network.vertex.names(n)), color = "black", alpha = .5, size = 4) +
       scale_color_manual("", values = colors) +
       guides(color = FALSE) +
-      ggtitle(paste("Hypothesesosphère", i, ":", network.size(n), "blogs\n"))
+      ggtitle(paste("Hypothesesosphère", n %n% "year",
+                    ":", network.size(n), "blogs\n"))
 
     print(g)
 
