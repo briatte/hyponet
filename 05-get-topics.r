@@ -9,6 +9,9 @@ library(SnowballC) # stemming
 library(tm)        # cleaning
 library(stm)       # modeling
 
+library(stmBrowser)
+library(stmCorrViz)
+
 e = read_csv("data/edges_hypotheses.csv")
 
 e = unique(c(e$i, e$j))
@@ -16,18 +19,19 @@ f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", e)
 
 k = e[ !file.exists(f) ]
 
-while(length(k) > 0) {
+# allow for a few blog posts to be unavailable
+while(length(k) > 50) {
 
   cat("Downloading", sprintf("%4.0f", length(k)), "articles\n")
 
-  for(j in sample(k, ifelse(length(k) > 100, 100, length(k)))) {
+  for(j in sample(k, ifelse(length(k) > 500, 500, length(k)))) {
 
-    f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", j)
+    fn = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", j)
 
-    if(!file.exists(f))
-      try(download.file(j, f, quiet = TRUE), silent = TRUE)
+    if(!file.exists(fn))
+      try(download.file(j, fn, quiet = TRUE), silent = TRUE)
 
-    if(!file.exists(f) | !file.info(f)$size)
+    if(!file.exists(fn) | !file.info(fn)$size)
       cat("failed to download", j, "\n")
 
     # be nice with Hypothèses
@@ -42,14 +46,17 @@ while(length(k) > 0) {
   if(length(null))
     cat("Removed", length(null), "empty files\n")
 
-  # select 25% of full sample
   k = e[ !file.exists(f) ]
 
 }
 
+load("data/networks.rda")
+
 text = data_frame()
 
 for(n in l) {
+
+  cat("Building corpus for", n %n% "year", "...\n")
 
   for(j in unique(n %v% "oc")) {
 
@@ -71,8 +78,8 @@ for(n in l) {
       t = html_nodes(h, xpath = "//meta[@property = 'dc:subject']") %>%
         html_attr("content")
 
-      stopifnot(length(t) > 0)
-      tags = c(tags, t)
+      if(length(t) > 0)
+        tags = c(tags, t)
 
     }
 
@@ -89,11 +96,14 @@ for(n in l) {
 # # column 3: optimal community text (keywords)
 # glimpse(text)
 
-txt = textProcessor(text$text, metadata = text[, 1:2 ], language = "fr")
+txt = textProcessor(text$text, metadata = text, language = "fr")
 txt = prepDocuments(txt$documents, txt$vocab, txt$meta)
 
 stm = stm(txt$documents, txt$vocab, K = 20,
-          prevalence =~ community + year, max.em.its = 75,
+          prevalence =~ community + year, max.em.its = 100,
           data = txt$meta, seed = 3007)
 
-save(stm, file = "data/topics.rda")
+save(text, txt, stm, file = "data/topics_test.rda")
+
+stmCorrViz(stm, "corrviz.html")
+stmBrowser(stm, data = txt$meta, covariates = "year", text = "text")
