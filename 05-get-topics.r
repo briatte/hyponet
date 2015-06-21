@@ -84,8 +84,8 @@ for(n in l) {
 
 }
 
-# # column 1: year
-# # column 2: optimal community name
+# # column 1: year (2009 to 2015)
+# # column 2: optimal community year-name (unique)
 # # column 3: optimal community text (keywords)
 # glimpse(text)
 
@@ -95,3 +95,5 @@ txt = prepDocuments(txt$documents, txt$vocab, txt$meta)
 stm = stm(txt$documents, txt$vocab, K = 20,
           prevalence =~ community + year, max.em.its = 75,
           data = txt$meta, seed = 3007)
+
+save(stm, file = "data/topics.rda")
