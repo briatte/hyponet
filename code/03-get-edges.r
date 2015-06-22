@@ -7,7 +7,14 @@ library(readr)
 library(rvest)
 library(stringr)
 
-f = list.files("html", full.names = TRUE)
+a = read_csv("data/posts.csv")
+
+# select well-formed article addresses
+b = with(a, paste0(blog, slug))
+b = b[ grepl("^http://[a-z0-9]+.hypotheses.org/\\d+$", b) ]
+
+# list of file names
+f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", b)
 f = sample(f[ file.info(f)$size > 0 ])
 
 e = data_frame() # edge list
