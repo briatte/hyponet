@@ -12,7 +12,6 @@ dir.create("data", showWarnings = FALSE)
 
 blogs = "data/blogs.csv"
 posts = "data/posts.csv"
-links = "data/links.csv"
 
 if(!file.exists(blogs)) {
 
