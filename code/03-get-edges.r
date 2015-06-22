@@ -15,6 +15,7 @@ b = b[ grepl("^http://[a-z0-9]+.hypotheses.org/\\d+$", b) ]
 
 # list of file names
 f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", b)
+f = f[ file.exists(f) ]
 f = sample(f[ file.info(f)$size > 0 ])
 
 e = data_frame() # edge list
@@ -58,7 +59,7 @@ for(i in rev(f)) {
 
   if(!which(f == i) %% 500)
     cat(sprintf("%5.0f", which(f == i)), "posts left,",
-        sprintf("%5.0f", nrow(e)), "links to Hypothèses\n")
+        sprintf("%5.0f", nrow(e)), "edges\n")
 
 }
 
