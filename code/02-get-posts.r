@@ -15,15 +15,20 @@ b = b[ grepl("^http://[a-z0-9]+.hypotheses.org/\\d+$", b) ]
 # fraction of full sample to download
 s = 1/4
 
-k = sample(b, s * nrow(a) - length(list.files("html")))
+# list of file names
+l = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", b)
+names(l) = b
+
+# select fraction of full sample
+k = sample(b, s * nrow(a) - sum(file.exists(l)))
 
 while(length(k) > 0) {
 
-  cat("Downloading", sprintf("%4.0f", length(k)), "articles\n")
+  cat(date(), ": downloading", sprintf("%4.0f", length(k)), "articles\n")
 
   for(j in sample(k, ifelse(length(k) > 100, 100, length(k)))) {
 
-    f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", j)
+    f = l[ j ]
 
     if(!file.exists(f))
       try(download.file(j, f, quiet = TRUE), silent = TRUE)
@@ -32,7 +37,7 @@ while(length(k) > 0) {
       cat("failed to download", j, "\n")
 
     # be nice with Hypothèses
-    Sys.sleep(.5)
+    Sys.sleep(1)
 
   }
 
@@ -43,7 +48,7 @@ while(length(k) > 0) {
   if(length(null))
     cat("Removed", length(null), "empty files\n")
 
-  # select 25% of full sample
-  k = sample(b, s * nrow(a) - length(list.files("html")))
+  # select fraction of full sample
+  k = sample(b, s * nrow(a) - sum(file.exists(l)))
 
 }
