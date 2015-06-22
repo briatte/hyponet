@@ -20,7 +20,10 @@ l = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", b)
 names(l) = b
 
 # select fraction of full sample
-k = sample(b, s * nrow(a) - sum(file.exists(l)))
+k = round(s * nrow(a)) - sum(file.exists(l))
+
+# sample that many missing files
+k = sample(b[ !file.exists(l) ], k)
 
 while(length(k) > 0) {
 
@@ -34,7 +37,7 @@ while(length(k) > 0) {
       try(download.file(j, f, quiet = TRUE), silent = TRUE)
 
     if(!file.exists(f) | !file.info(f)$size)
-      cat("failed to download", j, "\n")
+      cat(".. failed to download", j, "\n")
 
     # be nice with Hypothèses
     Sys.sleep(1)
@@ -46,9 +49,12 @@ while(length(k) > 0) {
   null = file.remove(list.files("html", full.names = TRUE)[ null ])
 
   if(length(null))
-    cat("Removed", length(null), "empty files\n")
+    cat(".. removed", length(null), "empty file(s)\n")
 
   # select fraction of full sample
-  k = sample(b, s * nrow(a) - sum(file.exists(l)))
+  k = round(s * nrow(a)) - sum(file.exists(l))
+
+  # sample that many missing files
+  k = sample(b[ !file.exists(l) ], k)
 
 }
