@@ -10,7 +10,7 @@ library(stringr)
 f = list.files("html", full.names = TRUE)
 f = sample(f[ file.info(f)$size > 0 ])
 
-e = data_frame() # edge list: Hypothèses
+e = data_frame() # edge list
 
 for(i in rev(f)) {
 
@@ -64,4 +64,4 @@ e$j = gsub("/$", "", e$j)
 e = filter(e, grepl("/\\d+$", i), str_count(i, "/") == 3,
            grepl("/\\d+$", j), str_count(j, "/") == 3)
 
-write_csv(arrange(e, t), "data/edges_hypotheses.csv")
+write_csv(arrange(e, t), "data/edges.csv")

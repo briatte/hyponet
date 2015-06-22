@@ -1,18 +1,18 @@
 #
-# 4. get a structured corpus and model them via a structural topic model
+# 5. get a structured corpus for the network
 #
 
+library(dplyr)
 library(readr)
 library(rvest)
 
+library(ggplot2)
+library(network)
+
 library(SnowballC) # stemming
 library(tm)        # cleaning
-library(stm)       # modeling
 
-library(stmBrowser)
-library(stmCorrViz)
-
-e = read_csv("data/edges_hypotheses.csv")
+e = read_csv("data/edges.csv")
 
 e = unique(c(e$i, e$j))
 f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", e)
@@ -50,13 +50,13 @@ while(length(k) > 50) {
 
 }
 
-load("data/networks.rda")
+load("model/networks.rda")
 
 text = data_frame()
 
 for(n in l) {
 
-  cat("Building corpus for", n %n% "year", "...\n")
+  cat("Building corpus for", n %n% "year")
 
   for(j in unique(n %v% "oc")) {
 
@@ -79,31 +79,30 @@ for(n in l) {
         html_attr("content")
 
       if(length(t) > 0)
-        tags = c(tags, t)
+        tags = c(tags, tolower(t))
 
     }
 
-    text = rbind(text, data_frame(year = n %n% "year",
-                                  community = paste0("y", n %n% "year", j),
-                                  text = paste0(tolower(tags), collapse = " . ")))
+    # remove prefix numbers
+    tags = gsub("^\\d+(-|\\.)? ", "", tags)
+
+    # remove punctuation
+    tags = gsub("[[:punct:]]", " ", tags)
+
+    # trim whitespace
+    tags = gsub("^\\s|\\s$", "", gsub("\\s+", " ", tags))
+
+    # keyword exceptions
+    tags = tags[ !tags %in% c("", "non classé") ]
+
+    text = rbind(text, data_frame(year = n %n% "year", oc = j,
+                                  text = paste0(tags, collapse = " . ")))
 
   }
 
+  cat(":", sum(text$year == n %n% "year"), "articles\n")
+
 }
 
-# # column 1: year (2009 to 2015)
-# # column 2: optimal community year-name (unique)
-# # column 3: optimal community text (keywords)
-# glimpse(text)
-
-txt = textProcessor(text$text, metadata = text, language = "fr")
-txt = prepDocuments(txt$documents, txt$vocab, txt$meta)
-
-stm = stm(txt$documents, txt$vocab, K = 20,
-          prevalence =~ community + year, max.em.its = 100,
-          data = txt$meta, seed = 3007)
-
-save(text, txt, stm, file = "data/topics_test.rda")
-
-stmCorrViz(stm, "corrviz.html")
-stmBrowser(stm, data = txt$meta, covariates = "year", text = "text")
+text$oc = paste0("i", sprintf("%03.0f", 1:nrow(text)))
+write_csv(text, "data/corpus.csv")

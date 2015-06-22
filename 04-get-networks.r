@@ -15,6 +15,8 @@ library(igraph)
 library(intergraph)
 library(network)
 
+dir.create("model", showWarnings = FALSE)
+
 e = read_csv("data/edges_hypotheses.csv")
 
 # simplified date
@@ -94,7 +96,7 @@ for(i in as.character(2009:2015)) {
 
 }
 
-save(l, file = "data/networks.rda")
+save(l, file = "model/networks.rda")
 
 # network dimensions
 
