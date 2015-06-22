@@ -31,7 +31,7 @@ lab = labelTopics(stm, topics = 1:20, n = 3, frexweight = .5)[[ "prob" ]] %>%
 qplot(data = lab, y = reorder(topics, freq), yend = reorder(topics, freq),
       xend = 0, x = freq, geom = "segment") +
   geom_text(aes(x = freq + 0.005, label = lab, hjust = 0)) +
-  xlim(0, max(freq) * 2) +
+  xlim(0, max(lab$freq) * 2) +
   labs(y = "Topic\n", x = "\nExpected proportion") +
   theme_bw(14) +
   theme(panel.grid = element_blank())
