@@ -17,7 +17,7 @@ library(network)
 
 dir.create("model", showWarnings = FALSE)
 
-e = read_csv("data/edges_hypotheses.csv")
+e = read_csv("data/edges.csv")
 
 # simplified date
 

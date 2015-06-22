@@ -36,7 +36,7 @@ while(length(k) > 50) {
       cat("failed to download", j, "\n")
 
     # be nice with Hypothèses
-    Sys.sleep(.5)
+    Sys.sleep(1)
 
   }
 
