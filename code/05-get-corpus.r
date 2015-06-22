@@ -9,6 +9,7 @@ library(rvest)
 library(ggplot2)
 library(network)
 
+library(stringr)
 library(SnowballC) # stemming
 library(tm)        # cleaning
 
@@ -90,13 +91,14 @@ for(n in l) {
     tags = gsub("[[:punct:]]", " ", tags)
 
     # trim whitespace
-    tags = gsub("^\\s|\\s$", "", gsub("\\s+", " ", tags))
+    tags = str_trim(gsub("\\s+", " ", tags))
 
     # keyword exceptions
     tags = tags[ !tags %in% c("", "non classé") ]
 
-    text = rbind(text, data_frame(year = n %n% "year", oc = j,
-                                  text = paste0(tags, collapse = " . ")))
+    if(length(tags))
+      text = rbind(text, data_frame(year = n %n% "year", oc = j,
+                                    text = paste0(tags, collapse = " . ")))
 
   }
 
