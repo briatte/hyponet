@@ -15,6 +15,12 @@ text = read_csv("data/corpus.csv")
 txt = textProcessor(text$text, metadata = text, language = "fr")
 txt = prepDocuments(txt$documents, txt$vocab, txt$meta)
 
+# find_k = selectModel(txt$documents, txt$vocab, data = txt$meta,
+#                      prevalence = ~ year + oc, K = 10, runs = 20)
+
+# find_k = searchK(txt$documents, txt$vocab, data = txt$meta,
+#                  prevalence = ~ year + oc, K = seq(10, 100, 10))
+
 stm = stm(txt$documents, txt$vocab, data = txt$meta,
           K = 20, prevalence = ~ year + oc,
           max.em.its = 100, seed = 3007)
