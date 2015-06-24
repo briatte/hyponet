@@ -5,6 +5,14 @@
 library(dplyr)
 library(readr)
 
+library(ggplot2)
+library(RColorBrewer)
+
+library(GGally)
+library(igraph)
+library(intergraph)
+library(network)
+
 library(stm)
 
 # library(stmBrowser)
@@ -30,6 +38,8 @@ save(text, txt, stm, file = "model/topics.rda")
 # stmCorrViz(stm, "corrviz.html")
 # stmBrowser(stm, data = txt$meta, covariates = "year", text = "text")
 
+# topic expected proportions
+
 lab = labelTopics(stm, topics = 1:20, n = 3, frexweight = .5)[[ "prob" ]] %>%
   apply(., 1, function(x) paste(x[ nchar(x) > 0 ], collapse = ", ")) %>%
   data_frame(lab = ., topics = 1:20, freq = colMeans(stm$theta[ , topics ]))
@@ -42,4 +52,32 @@ qplot(data = lab, y = reorder(topics, freq), yend = reorder(topics, freq),
   theme_bw(14) +
   theme(panel.grid = element_blank())
 
-ggsave("hypotopics.png", width = 9, height = 7)
+ggsave("hyponet_topics_proportions.png", width = 9, height = 7)
+ggsave("hyponet_topics_proportions.pdf", width = 9, height = 7)
+
+# topic correlation network
+
+tcn = topicCorr(stm)
+tcn = network(tcn$posadj, directed = FALSE)
+network.vertex.names(tcn) = gsub(", ", "\n", lab$lab)
+
+tcn %v% "oc" = as.character(membership(optimal.community(asIgraph(tcn))))
+
+colors = sort(table(tcn %v% "oc"), decreasing = TRUE)
+x = ifelse(length(colors) > 7, 8, length(colors))
+colors[ 1:x ] = brewer.pal(x, "Set1")
+colors[ nchar(colors) < 7 ] = "#AAAAAA"
+
+ggnet(tcn, size = 0, node.group = tcn %v% "oc") +
+  geom_text(aes(label = network.vertex.names(tcn), color = tcn %v% "oc",
+                size = igraph::degree(asIgraph(tcn)))) +
+  geom_text(aes(label = network.vertex.names(tcn),
+                size = igraph::degree(asIgraph(tcn))),
+            color = "black", alpha = .5) +
+  scale_size_area("", max_size = 6) +
+  scale_color_manual("", values = colors) +
+  guides(color = FALSE, size = FALSE) +
+  ggtitle(paste("Hypothesesosphère 2009-2015:", network.size(tcn), "thèmes\n"))
+
+ggsave("hyponet_topics_network.png", width = 7, height = 7)
+ggsave("hyponet_topics_network.pdf", width = 7, height = 7)
