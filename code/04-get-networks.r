@@ -33,9 +33,11 @@ group_by(e, t) %>%
 
 # complete network (too large for optimal community detection, so using Waltrap)
 
-n = network(e[, c("ii", "jj") ])
+t = unique(e[, c("ii", "jj", "w") ])    # edge list
+n = network(t[, 1:2 ], directed = TRUE) # network
 
-network::set.edge.attribute(n, "w", 1 / e$w)
+# tie weights (Newman-Fowler: inverse number of hyperlinks in blog post)
+network::set.edge.attribute(n, "w", 1 / t$w)
 
 # communities
 oc = membership(walktrap.community(asIgraph(n), weights = n %e% "w"))
@@ -46,6 +48,7 @@ x = ifelse(length(colors) > 7, 8, length(colors))
 colors[ 1:x ] = brewer.pal(x, "Set1")
 colors[ nchar(colors) < 7 ] = "#AAAAAA"
 
+# nodes sized by (unweighted) degree
 ggnet(n, size = 0, node.group = n %v% "oc") +
   geom_text(aes(label = network.vertex.names(n), color = n %v% "oc",
                 size = cut(igraph::degree(asIgraph(n)),
@@ -67,10 +70,11 @@ l = list()
 
 for(i in as.character(2009:2015)) {
 
-  n = network(e[ e$t == i, c("ii", "jj") ], directed = TRUE)
+  t = unique(e[ e$t == i, c("ii", "jj", "w") ]) # weighted edge list
+  n = network(t[, 1:2 ], directed = TRUE)       # network
 
-  # tie weights
-  network::set.edge.attribute(n, "w", 1 / e[ e$t == i, "w" ])
+  # tie weights (Newman-Fowler: inverse number of hyperlinks in blog post)
+  network::set.edge.attribute(n, "w", 1 / t$w)
 
   # communities
   oc = optimal.community(asIgraph(n), weights = n %e% "w")
@@ -87,9 +91,9 @@ for(i in as.character(2009:2015)) {
 
   n %n% "files" = t
 
-  cat(n %n% "Network for year", i, ":",
-      length(t), "files,",
-      network.size(n), "nodes\n")
+  cat("\nNetwork for year", i, ":", length(t), "files,",
+      network.size(n), "nodes,", network.edgecount(n), "ties\n")
+
   print(n %n% "oc")
 
   l[[ i ]] = n
