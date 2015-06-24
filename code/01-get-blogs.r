@@ -66,21 +66,12 @@ if(file.exists(posts)) {
 
 }
 
-# start with existing file
-if(file.exists(links)) {
-
-  b = read_csv(links)
-
-} else {
-
-  b = data_frame()
-
-}
-
 left = sample(l$blog[ !l$blog %in% a$blog ])
 
 # note: blogs that do not allow to paginate through articles are skipped, e.g.
-# criminocorpus.hypotheses.org
+# criminocorpus.hypotheses.org, as well as those where all pages point to the
+# same presentation article, by stopping the loop if there are over 500 pages
+# (this concerns exogeneses.hypotheses.org and dissisdences.hypotheses.org).
 
 for(i in rev(left)) {
 
