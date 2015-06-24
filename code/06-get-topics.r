@@ -52,8 +52,8 @@ qplot(data = lab, y = reorder(topics, freq), yend = reorder(topics, freq),
   theme_bw(14) +
   theme(panel.grid = element_blank())
 
-ggsave("hyponet_topics_proportions.png", width = 9, height = 7)
-ggsave("hyponet_topics_proportions.pdf", width = 9, height = 7)
+ggsave("hypotopics_p.png", width = 9, height = 7)
+ggsave("hypotopics_p.pdf", width = 9, height = 7)
 
 # topic correlation network
 
@@ -79,5 +79,5 @@ ggnet(tcn, size = 0, node.group = tcn %v% "oc") +
   guides(color = FALSE, size = FALSE) +
   ggtitle(paste("Hypothesesosphère 2009-2015:", network.size(tcn), "thèmes\n"))
 
-ggsave("hyponet_topics_network.png", width = 7, height = 7)
-ggsave("hyponet_topics_network.pdf", width = 7, height = 7)
+ggsave("hypotopics_net.png", width = 7, height = 7)
+ggsave("hypotopics_net.pdf", width = 7, height = 7)
