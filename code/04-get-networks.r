@@ -28,8 +28,9 @@ e$t = substr(e$t, 1, 4)
 e$ii = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$i))
 e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$j))
 
-group_by(e, t) %>%
-  summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj))
+# group_by(e, t) %>%
+#   summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj)) %>%
+#   knitr::kable(.)
 
 # complete network (too large for optimal community detection, so using Waltrap)
 
@@ -104,16 +105,15 @@ save(l, file = "model/networks.rda")
 
 # network dimensions
 
-dim = data_frame(
-  network = names(l),
-  nodes = sapply(l, network.size),
-  edges = sapply(l, network.edgecount),
-  density = sapply(l, network.density),
-  communities = sapply(l, function(x) length(x %n% "oc")),
-  modularity = sapply(l, function(x) x %n% "modularity")
-)
-
-knitr::kable(dim, digits = 2)
+# data_frame(
+#   network = names(l),
+#   nodes = sapply(l, network.size),
+#   edges = sapply(l, network.edgecount),
+#   density = sapply(l, network.density),
+#   communities = sapply(l, function(x) length(x %n% "oc")),
+#   modularity = sapply(l, function(x) x %n% "modularity")
+# ) %>%
+#   knitr::kable(., digits = 2)
 
 # plot dynamic network
 
