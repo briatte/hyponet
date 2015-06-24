@@ -125,8 +125,10 @@ saveGIF({
     colors[ 1:x ] = brewer.pal(x, "Set1")
     colors[ nchar(colors) < 7 ] = "#AAAAAA"
 
-    g = ggnet(n, size = 0, label = TRUE, label.size = 4, node.group = n %v% "oc", segment.color = "grey25") +
-      geom_text(aes(label = network.vertex.names(n)), color = "black", alpha = .5, size = 4) +
+    g = ggnet(n, size = 0, label = TRUE, label.size = 4,
+              node.group = n %v% "oc", segment.color = "grey25") +
+      geom_text(aes(label = network.vertex.names(n)),
+                color = "black", alpha = .5, size = 4) +
       scale_color_manual("", values = colors) +
       guides(color = FALSE) +
       ggtitle(paste("Hypothesesosphère", n %n% "year",
