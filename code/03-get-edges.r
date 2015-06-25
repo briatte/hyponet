@@ -43,7 +43,9 @@ for(i in rev(f)) {
   if(!length(text))
     text = html_nodes(h, "div.entry-content")
 
-  stopifnot(length(text) > 0)
+  # stopifnot(length(text) > 0)
+  if(!length(text))
+    cat(i, ": empty\n")
 
   urls = html_nodes(text, "a") %>% html_attr("href") %>% na.omit
   urls = urls[ !grepl(gsub("http://(.*)/\\d+", "\\1", base), urls) ]

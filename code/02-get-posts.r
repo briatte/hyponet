@@ -29,7 +29,8 @@ k = round(s * length(a)) - sum(file.exists(l))
 # sample that many missing files
 k = sample(a[ !file.exists(l) ], k)
 
-while(length(k) > 0) {
+# allow for a few permanent errors
+while(length(k) > 100) {
 
   cat(date(), ": downloading", sprintf("%4.0f", length(k)), "articles\n")
 
