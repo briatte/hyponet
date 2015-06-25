@@ -20,8 +20,8 @@ f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", e)
 
 k = e[ !file.exists(f) ]
 
-# allow for a few blog posts to be unavailable
-while(length(k) > 50) {
+# allow for a few permanent errors
+while(length(k) > 100) {
 
   cat("Downloading", sprintf("%4.0f", length(k)), "articles\n")
 
