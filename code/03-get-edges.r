@@ -68,6 +68,8 @@ for(i in rev(f)) {
 # corrections
 e$i = gsub("^https://", "http://", e$i)
 e$j = gsub("^https://", "http://", e$j)
+e$i = gsub("^//", "http://", e$i)
+e$j = gsub("^//", "http://", e$j)
 e$i = gsub("/$", "", e$i)
 e$j = gsub("/$", "", e$j)
 
