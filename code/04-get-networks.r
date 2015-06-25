@@ -22,6 +22,7 @@ e = read_csv("data/edges.csv")
 # simplified date
 
 e$t = substr(e$t, 1, 4)
+e$t[ e$t == "2008" ] = "2009" # lone blog post
 
 # simplified edges (blogs)
 
@@ -32,17 +33,35 @@ e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$j))
 #   summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj)) %>%
 #   knitr::kable(.)
 
-# complete network (too large for optimal community detection, so using Waltrap)
+#
+# COMPLETE NETWORK
+#
 
-t = unique(e[, c("ii", "jj", "w") ])    # edge list
-n = network(t[, 1:2 ], directed = TRUE) # network
+# weighted edge list
+t = select(e, ii, jj, w) %>%
+  group_by(ii, jj) %>%
+  summarise(w = sum(1 / w), c = n())
 
-# tie weights (Newman-Fowler: inverse number of hyperlinks in blog post)
-network::set.edge.attribute(n, "w", 1 / t$w)
+# directed network, no self-loops
+n = network(t[, 1:2 ], directed = TRUE, loops = FALSE)
 
-# communities
-oc = membership(walktrap.community(asIgraph(n), weights = n %e% "w"))
-n %v% "oc" = str_pad(oc, width = 3, pad = "i")
+# weight ties by inverse number of hyperlinks in blog post
+network::set.edge.attribute(n, "weight", t$w)
+network::set.edge.attribute(n, "count", t$c)
+
+# Walktrap community detection
+oc = walktrap.community(asIgraph(n))
+n %v% "oc" = paste0("g", str_pad(membership(oc), width = 3, pad = "0"))
+
+n %n% "year" = table(e$t)
+n %n% "modularity" = modularity(oc)
+n %n% "communities" = n_distinct(n %v% "oc")
+
+t = select(e, i, j)
+t = unique(c(t$i, t$j)) %>%
+  gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", .)
+
+n %n% "files" = t
 
 colors = sort(table(n %v% "oc"), decreasing = TRUE)
 x = ifelse(length(colors) > 7, 8, length(colors))
@@ -65,26 +84,34 @@ ggnet(n, size = 0, node.group = n %v% "oc") +
 ggsave("hyponet.png", width = 7, height = 7)
 ggsave("hyponet.pdf", width = 7, height = 7)
 
-# year-specific networks (small enough to use optimal community detection)
+#
+# YEAR-SPECIFIC NETWORKS
+#
 
 l = list()
 
 for(i in as.character(2009:2015)) {
 
-  t = unique(e[ e$t == i, c("ii", "jj", "w") ]) # weighted edge list
-  n = network(t[, 1:2 ], directed = TRUE)       # network
+  # weighted edge list
+  t = e[ e$t == i, ] %>%
+    select(ii, jj, w) %>%
+    group_by(ii, jj) %>%
+    summarise(w = sum(1 / w), c = n())
 
-  # tie weights (Newman-Fowler: inverse number of hyperlinks in blog post)
-  network::set.edge.attribute(n, "w", 1 / t$w)
+  # directed network, no self-loops
+  n = network(t[, 1:2 ], directed = TRUE, loops = FALSE)
 
-  # communities
-  oc = optimal.community(asIgraph(n), weights = n %e% "w")
+  # weight ties by inverse number of hyperlinks in blog post
+  network::set.edge.attribute(n, "weight", t$w)
+  network::set.edge.attribute(n, "count", t$c)
 
-  n %v% "oc" = paste0("g", membership(oc))
+  # Walktrap community detection
+  oc = walktrap.community(asIgraph(n))
+  n %v% "oc" = paste0("g", str_pad(membership(oc), width = 3, pad = "0"))
 
   n %n% "year" = i
   n %n% "modularity" = modularity(oc)
-  n %n% "oc" = sizes(oc)
+  n %n% "communities" = n_distinct(n %v% "oc")
 
   t = e[ e$t == i, c("i", "j") ]
   t = unique(c(t$i, t$j)) %>%
@@ -92,10 +119,9 @@ for(i in as.character(2009:2015)) {
 
   n %n% "files" = t
 
-  cat("\nNetwork for year", i, ":", length(t), "files,",
-      network.size(n), "nodes,", network.edgecount(n), "ties\n")
-
-  print(n %n% "oc")
+  cat("Network for year", i, ":", length(t), "files,",
+      network.size(n), "nodes,", network.edgecount(n), "ties",
+      n %n% "communities", "communities\n")
 
   l[[ i ]] = n
 
@@ -110,7 +136,7 @@ save(l, file = "model/networks.rda")
 #   nodes = sapply(l, network.size),
 #   edges = sapply(l, network.edgecount),
 #   density = sapply(l, network.density),
-#   communities = sapply(l, function(x) length(x %n% "oc")),
+#   communities = sapply(l, function(x) x %n% "communities"),
 #   modularity = sapply(l, function(x) x %n% "modularity")
 # ) %>%
 #   knitr::kable(., digits = 2)
