@@ -16,6 +16,8 @@ library(tm)        # cleaning
 e = read_csv("data/edges.csv")
 
 e = unique(c(e$i, e$j))
+e = gsub("(.*)http(.*)", "http\\2", e)
+
 f = gsub("http://(.*)\\.hypotheses\\.org/(.*)", "html/\\1.\\2.html", e)
 
 k = e[ !file.exists(f) ]
@@ -102,7 +104,7 @@ for(n in l) {
 
   }
 
-  cat(":", sum(text$year == n %n% "year"), "articles\n")
+  cat(":", sum(text$year == n %n% "year"), "documents\n")
 
 }
 
