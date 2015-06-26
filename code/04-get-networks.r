@@ -33,6 +33,8 @@ e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", e$j) %>%
   str_trim %>%
   tolower
 
+e = filter(e, ii != jj)
+
 # group_by(e, t) %>%
 #   summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj)) %>%
 #   knitr::kable(.)
