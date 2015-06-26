@@ -26,8 +26,12 @@ e$t[ e$t == "2008" ] = "2009" # lone blog post
 
 # simplified edges (blogs)
 
-e$ii = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$i))
-e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", tolower(e$j))
+e$ii = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", e$i) %>%
+  str_trim %>%
+  tolower
+e$jj = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", e$j) %>%
+  str_trim %>%
+  tolower
 
 # group_by(e, t) %>%
 #   summarise(edges = n(), blogs_i = n_distinct(ii), blogs_j = n_distinct(jj)) %>%
@@ -141,7 +145,7 @@ save(l, file = "model/networks.rda")
 # ) %>%
 #   knitr::kable(., digits = 2)
 
-# plot dynamic network
+# network animation
 
 saveGIF({
   for(n in l) {
@@ -164,3 +168,57 @@ saveGIF({
 
   }
 }, movie.name = "hyponet.gif", interval = 2, ani.width = 800, ani.height = 800)
+
+#
+# YEAR-MONTH NETWORKS
+#
+
+# reload edge list
+e = read_csv("data/edges.csv")
+
+e$i = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", e$i) %>%
+  str_trim %>%
+  tolower
+e$j = gsub("https?://([a-z0-9-]+).hypotheses.org/(.*)", "\\1", e$j) %>%
+  str_trim %>%
+  tolower
+
+# remove self-loops
+e = filter(e, i != j)
+
+# year-month
+e$t = substr(e$t, 1, 7)
+
+t = unique(e[, 2:3 ])
+t$uid = paste(t$i, t$j)
+
+n = graph.edgelist(as.matrix(t[, 1:2 ]), directed = TRUE)
+E(n)$uid = t$uid
+l = layout.fruchterman.reingold(n)
+
+V(n)$frame.color = NA
+V(n)$color = NA
+V(n)$label = ""
+V(n)$size = 2
+E(n)$arrow.mode = 1
+E(n)$arrow.size = .3
+E(n)$color = NA
+
+ramp = colorRampPalette(c("grey50", "tomato"))(50)
+
+saveGIF({
+  for(i in unique(e$t)) {
+
+    w = with(e[ e$t == i, ], unique(c(i, j)))
+    m = with(e[ e$t == i, ], paste(i, j))
+
+    V(n)$size = V(n)$size + as.numeric(V(n)$name %in% w)
+    V(n)$color = ifelse(V(n)$name %in% w | !is.na(V(n)$color), ramp[ V(n)$size ], NA)
+    V(n)$frame.color = ifelse(V(n)$name %in% w | !is.na(V(n)$frame.color), "grey75", NA)
+    E(n)$color = ifelse(E(n)$uid %in% m | !is.na(E(n)$color), "grey50", NA)
+
+    plot(n, layout = l, main = paste(i, ":", sum(!is.na(V(n)$color)), "blogs",
+                                     sum(!is.na(E(n)$color)), "links"))
+
+  }
+}, movie.name = "hypodyn.gif", interval = .5, ani.width = 800, ani.height = 800)
